@@ -1,2 +1,2 @@
 # heatzy-py-lib
-Library to use Heatzy API
+Inspired by the now opbsolote (https://github.com/tmz42/python-heatzy) [python-heatzy]
