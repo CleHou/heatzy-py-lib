@@ -11,7 +11,8 @@ print(manager)
 
 A = manager.BindingManagement
 print(A)
-rep = A.edit('3Xt9llkUMckRdeaZ3mNRlb', remark={'test':'test'})
-A.device_param('Salon')
+#rep = A.edit('Salon', remark={'test':'Appartement'})
+#rep = A.edit('Chambre', remark={'groupname':'Appartement'})
+rep = A.delete('test')
 print(rep)
 

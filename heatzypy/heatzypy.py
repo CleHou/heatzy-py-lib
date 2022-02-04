@@ -77,6 +77,7 @@ class BindingManagement:
                 self.devices_df.loc[len(self.devices_df)]=[rad_dict['did'], rad_dict['dev_alias'], '']
         
         self.devices_df = self.devices_df.set_index('did')
+        
             
     def edit (self, device:str, remark={}, dev_alias='', dev_label=''):
         print(self.devices_df.reset_index())
@@ -102,10 +103,12 @@ class BindingManagement:
                     for key in remark.keys():
                         former_remark[key] = remark[key]
                         
+                    former_remark.pop('test')
+                        
                     remark_str = ""
                     for key in former_remark.keys():
                         remark_str += f"{key.strip()}={former_remark[key].strip()}|"
-                    remark_str = remark_str[:-2]
+                    remark_str = remark_str[:-1]
                     
                     payload += "\"" + "remark" + "\": \"" + remark_str + "\", "
                     
@@ -127,7 +130,26 @@ class BindingManagement:
             raise Warning(f"Device {device} doesn't match any devices. device param must be a device id, alias or one of the device label")
             
         return json_rep
-        
+    
+    def delete (self, device):
+        if device in self.devices_df.reset_index().values:
+            did = self.get_did(device)
+            
+            headers = {'X-Gizwits-Application-Id': Connexion.APP_ID,
+                       'X-Gizwits-User-token': self.usr_token,
+                       'Content-Type': 'text/plain'
+                       }
+            path = f'{Connexion.API_URL}/bindings'
+            payload = "{\"devices\": [{\"did\":\"" + did + "\"}]}"
+            
+            response = requests.request("DELETE", path, headers=headers, data=payload)
+            json_rep = response.json()
+            
+        else:
+            raise Warning(f"Device {device} doesn't match any devices. device param must be a device id, alias or one of the device label")
+         
+        return json_rep
+    
     def get_did (self, device):
         for col in self.devices_df.columns:
             if device in self.devices_df[col].values:
