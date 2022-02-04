@@ -78,7 +78,7 @@ class BindingManagement:
         
         self.devices_df = self.devices_df.set_index('did')
             
-    def edit (self, device:str, remark='', dev_alias='', dev_label=''):
+    def edit (self, device:str, remark={}, dev_alias='', dev_label=''):
         print(self.devices_df.reset_index())
         if device in self.devices_df.reset_index().values:
             did = self.get_did(device)
@@ -89,9 +89,26 @@ class BindingManagement:
                        }
             path = f'{Connexion.API_URL}/bindings/{did}'
             payload = "{"
-            for param, param_str in zip([remark, dev_alias, dev_label], ['remark', 'dev_alias', 'dev_label']):
+            for param, param_str in zip([dev_alias, dev_label], ['dev_alias', 'dev_label']):
                 if param != '':
-                    payload += "\"" + param_str + "\": \"" + param + "\", " 
+                    payload += "\"" + param_str + "\": \"" + param + "\", "
+                    
+            if remark != {}:
+                if not isinstance(remark, dict):
+                    raise Warning('remark parameter must be a dict')
+                else:
+                    former_remark = self.devices_dict[did]['remark']
+                    
+                    for key in remark.keys():
+                        former_remark[key] = remark[key]
+                        
+                    remark_str = ""
+                    for key in former_remark.keys():
+                        remark_str += f"{key.strip()}={former_remark[key].strip()}|"
+                    remark_str = remark_str[:-2]
+                    
+                    payload += "\"" + "remark" + "\": \"" + remark_str + "\", "
+                    
             payload = payload[:-2]
             payload += "}"
             
@@ -102,20 +119,30 @@ class BindingManagement:
                 response = requests.request("PUT", path, headers=headers, data=payload)
                 json_rep = response.json()
                 
-                self.devices()
+                print(f"Information of device {device} was succesfully change")
                 
+                self.devices()    
             
         else:
             raise Warning(f"Device {device} doesn't match any devices. device param must be a device id, alias or one of the device label")
+            
+        return json_rep
         
     def get_did (self, device):
         for col in self.devices_df.columns:
             if device in self.devices_df[col].values:
                 df = self.devices_df.reset_index().set_index(col)
                 return df.loc[device, 'did']
-        
         else:
             return device
+        
+    def __str__ (self):
+        return repr(self.devices_df)
+    
+    def device_param(self, device):
+        if device in self.devices_df.reset_index().values:
+            did = self.get_did(device)
+            print(json.dumps(self.devices_dict[did], indent=2))
             
         
     

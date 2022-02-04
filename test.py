@@ -10,6 +10,8 @@ manager = heatzypy.Connexion(os.environ.get('username'), os.environ.get('passwor
 print(manager)
 
 A = manager.BindingManagement
-A.edit('3Xt9llkUMckRdeaZ3mNRlb', dev_alias='Salon')
-dic = A.devices_dict
 print(A)
+rep = A.edit('3Xt9llkUMckRdeaZ3mNRlb', remark={'test':'test'})
+A.device_param('Salon')
+print(rep)
+
