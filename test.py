@@ -9,10 +9,15 @@ load_dotenv()
 manager = heatzypy.Connexion(os.environ.get('username'), os.environ.get('password'))
 print(manager)
 
+"""
 A = manager.BindingManagement
 print(A)
 #rep = A.edit('Salon', remark={'test':'Appartement'})
 #rep = A.edit('Chambre', remark={'groupname':'Appartement'})
-rep = A.delete('test')
-print(rep)
+#rep = A.delete('test')
+"""
+
+B = manager.DeviceMonitoring
+rep,df = B.status('Salon')
+print(B.df_schedule)
 

@@ -171,6 +171,74 @@ class BindingManagement:
 class DeviceMonitoring:
     def __init__ (self, usr_token):
         self.usr_token = usr_token
+        
+        self.BM = BindingManagement(self.usr_token)
+        self.devices_dict = self.BM.devices_dict
+        self.devices_df = self.BM.devices_df
+        
+    def status (self, device):
+        if device in self.devices_df.reset_index().values:
+            did = self.BM. get_did(device)
+            
+            headers = {'X-Gizwits-Application-Id': Connexion.APP_ID,
+                       'X-Gizwits-User-token': self.usr_token,
+                       }
+            path = f'{Connexion.API_URL}/devdata/{did}/latest'
+            
+            response = requests.request("GET", path, headers=headers)
+            json_rep = response.json()
+            
+        else:
+            raise Warning(f"Device {device} doesn't match any devices. device param must be a device id, alias or one of the device label")
+        
+        df_shed = self.status_to_schedule(json_rep)
+        
+        print(json_rep.keys())
+        
+        self.time_week = json_rep['attr']['time_week']
+        self.mode = json_rep['attr']['mode']
+        self.lock_switch = json_rep['attr']['lock_switch']
+        self.timer_switch = json_rep['attr']['timer_switch']
+        self.boost_switch = json_rep['attr']['boost_switch']
+        self.boost_time = json_rep['attr']['boost_time']
+        self.derog_mode = json_rep['attr']['derog_mode']
+        self.derog_time = json_rep['attr']['derog_time']
+        
+        return json_rep, df_shed
+    
+    def status_to_schedule (self, json_rep):
+        matching_table = {'00': 'cft', '01':'eco', '10':'fro', '11':'off'}
+        self.df_schedule  = pandas.DataFrame(index=pandas.date_range(start='2022-01-03 00:00', end='2022-01-10 00:00', freq='30min'),columns=['status'])
+        for day in range(1, 8):
+            for block in range(0, 13):
+                if f'p{day}_data{block}' in json_rep['attr'].keys():
+                    mode = str(bin(json_rep['attr'][f'p{day}_data{block}']).replace("0b", "")).zfill(8)
+                    #print(f'p{day}_data{block}', mode)
+                    
+                    day_0 = self.df_schedule.index[0] + pandas.to_timedelta(f'{day-1} days')
+                    
+                    for k, l in zip([0.5, 1, 1.5, 2], range(0,8,2)):
+                        date_time = day_0 + pandas.to_timedelta(f'{2*block - k} hours')
+                        status = mode[l:l+2]
+                        
+                        self.df_schedule.loc[date_time] = matching_table[status]
+                        
+                        #print(f'p{day}_data{block}', date_time)
+        self.df_schedule.loc[:,'day'] = self.df_schedule.index
+        self.df_schedule.loc[:,'time'] = self.df_schedule.index
+        self.df_schedule['day'] = self.df_schedule['day'].apply(lambda x: x.strftime('%a'))
+        self.df_schedule['time'] = self.df_schedule['time'].apply(lambda x: x.strftime('%H:%M'))
+        
+        self.df_schedule = self.df_schedule.dropna().pivot(index='time', columns='day', values='status')
+        self.df_schedule = self.df_schedule[['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']]
+        
+        return self.df_schedule
+                    
+                    
+        
+        
+        
+        
     
 class UserManagement:
     def __init__ (self, usr_token):
